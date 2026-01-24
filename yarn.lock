@@ -3337,6 +3337,7 @@ __metadata:
     graphql-scalars: "npm:1.25.0"
     jest: "npm:30.2.0"
     lambda-api: "npm:1.2.0"
+    lru-cache: "npm:^11.2.4"
     prettier: "npm:^3.8.1"
     serverless: "npm:4.31.0"
     serverless-offline: "npm:14.4.0"
@@ -5898,7 +5899,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lru-cache@npm:^11.0.0, lru-cache@npm:^11.1.0, lru-cache@npm:^11.2.1":
+"lru-cache@npm:^11.0.0, lru-cache@npm:^11.1.0, lru-cache@npm:^11.2.1, lru-cache@npm:^11.2.4":
   version: 11.2.4
   resolution: "lru-cache@npm:11.2.4"
   checksum: 10c0/4a24f9b17537619f9144d7b8e42cd5a225efdfd7076ebe7b5e7dc02b860a818455201e67fbf000765233fe7e339d3c8229fc815e9b58ee6ede511e07608c19b2

@@ -9,6 +9,7 @@
     "lint": "eslint . --ext .ts",
     "prettier": "prettier --write .",
     "start": "serverless offline start --httpPort=4000 --host 0.0.0.0 --reloadHandler",
+    "start:cached": "serverless offline start --httpPort=4000 --host 0.0.0.0",
     "test": "jest",
     "test:watch": "jest --watch --onlyChanged"
   },
@@ -25,7 +26,8 @@
     "graphql-http": "^1.22.4",
     "graphql-request": "7.4.0",
     "graphql-scalars": "1.25.0",
-    "lambda-api": "1.2.0"
+    "lambda-api": "1.2.0",
+    "lru-cache": "^11.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

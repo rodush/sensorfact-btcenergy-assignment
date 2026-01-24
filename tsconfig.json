@@ -6,12 +6,18 @@
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "allowImportingTsExtensions": true,
     "declaration": true,
     "noEmit": true,
     "noEmitHelpers": true,
     "importHelpers": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "graphql-helix": ["node_modules/graphql-helix/dist/index.d.ts"]
+    }
   },
   "include": ["src/**/*.ts"]
 }

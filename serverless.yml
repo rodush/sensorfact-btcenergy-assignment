@@ -1,19 +1,18 @@
 service: sf-assignment-pow
-frameworkVersion: '3'
+frameworkVersion: '4'
 configValidationMode: error
 
 provider:
   name: aws
-  runtime: nodejs16.x
+  # Latest environment supported by serverless-offline
+  runtime: nodejs22.x
   stage: ${opt:stage, 'dev'}
   region: eu-west-1
-  lambdaHashingVersion: 20201221
-  memorySize: 256
+  memorySize: 1024
   logRetentionInDays: 14
   timeout: 29
 
 plugins:
-  - serverless-esbuild
   - serverless-offline
 
 custom:
@@ -23,7 +22,7 @@ custom:
     sourcemap: false
     target: node16
     watch:
-      pattern: ['src/**/*.ts']
+      pattern: 'src/**/*.ts'
 
 functions:
   graphql:

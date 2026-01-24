@@ -1,9 +1,9 @@
 import { schema } from './schema'
-import { APIGatewayProxyHandlerV2 } from 'aws-lambda'
 import CreateLambdaApi from 'lambda-api'
 import { getGraphQLParameters, processRequest } from 'graphql-helix'
 import type { API, HandlerFunction } from 'lambda-api'
 import type { GraphQLSchema } from 'graphql'
+import { APIGatewayEvent, Context } from 'aws-lambda'
 
 export function APIGatewayLambda() {
   const isTest = process.env.NODE_ENV === 'test'
@@ -11,22 +11,24 @@ export function APIGatewayLambda() {
 
   return CreateLambdaApi({
     version: 'v2',
-    logger: isTest ? false :{
-      level: isOffline ? 'debug' : 'info'
-    }
+    logger: isTest
+      ? false
+      : {
+          level: isOffline ? 'debug' : 'info'
+        }
   })
 }
 
 export const graphqlApi = /*#__PURE__*/ <TContext>(
   schema: GraphQLSchema,
-  contextFactory?: () => Promise<TContext> | TContext,
+  contextFactory?: () => Promise<TContext> | TContext
 ): HandlerFunction => {
   return async function graphqlHandler(req, res) {
     const request = {
       body: req.body,
       headers: req.headers,
       method: req.method,
-      query: req.query,
+      query: req.query
     }
 
     const { query, variables, operationName } = getGraphQLParameters(request)
@@ -37,7 +39,7 @@ export const graphqlApi = /*#__PURE__*/ <TContext>(
       variables,
       operationName,
       request,
-      contextFactory,
+      contextFactory
     })
 
     if (result.type === 'RESPONSE') {
@@ -53,10 +55,9 @@ export const graphqlApi = /*#__PURE__*/ <TContext>(
   }
 }
 
-export function mkAPIGatewayHandler(api: API): APIGatewayProxyHandlerV2 {
-  return async function apiGatewayHandler(event, ctx) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return api.run(event as any, ctx)
+export function mkAPIGatewayHandler(api: API) {
+  return async function apiGatewayHandler(event: APIGatewayEvent, ctx: Context) {
+    return api.run(event, ctx)
   }
 }
 
@@ -64,4 +65,4 @@ const api = APIGatewayLambda()
 
 api.any(graphqlApi(schema))
 
-export const handler: APIGatewayProxyHandlerV2 = mkAPIGatewayHandler(api)
+export const handler = mkAPIGatewayHandler(api)

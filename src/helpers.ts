@@ -4,23 +4,16 @@
  * @returns Array of unix timestamps in milliseconds, starting from N days ago to today
  */
 export function getDayTimestamps(daysBack: number): number[] {
-  const timestamps: number[] = [];
-  const now = new Date();
+  const timestamps: number[] = []
 
   for (let i = daysBack; i >= 0; i--) {
-    const date = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() - i,
-      0,
-      0,
-      0,
-      0
-    ));
-    timestamps.push(date.getTime());
+    const now = new Date()
+    now.setUTCDate(now.getUTCDate() - i)
+    now.setUTCHours(0, 0, 0, 0) // Set to midnight UTC
+    timestamps.push(now.getTime())
   }
 
-  return timestamps;
+  return timestamps
 }
 
 /**
@@ -31,15 +24,15 @@ export function getDayTimestamps(daysBack: number): number[] {
  */
 export function batchArray<T>(items: T[], batchSize: number): T[][] {
   if (batchSize <= 0) {
-    throw new Error('Batch size must be greater than 0');
+    throw new Error('Batch size must be greater than 0')
   }
 
-  const batches: T[][] = [];
+  const batches: T[][] = []
   for (let i = 0; i < items.length; i += batchSize) {
-    batches.push(items.slice(i, i + batchSize));
+    batches.push(items.slice(i, i + batchSize))
   }
 
-  return batches;
+  return batches
 }
 
 /**
@@ -48,5 +41,5 @@ export function batchArray<T>(items: T[], batchSize: number): T[][] {
  * @returns Promise that resolves after the specified delay
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }

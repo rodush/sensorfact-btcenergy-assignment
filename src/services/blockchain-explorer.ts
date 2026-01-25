@@ -5,11 +5,17 @@ export type BlockchainItemData = {
   // We don't need all fields, just those which we will be using for our purposes
   hash: string
   size: number
+  time: number
 }
 
-type BlocksPerDayResponse = {
+export type BlocksPerDayResponse = {
   hash: string
+  time: number
   block_index: number
+}
+
+export type BlockData = BlockchainItemData & {
+  tx: BlockchainItemData[]
 }
 
 export class BlockchainExplorerService {
@@ -20,23 +26,20 @@ export class BlockchainExplorerService {
     this.blockchainExplorer = new HttpService('https://blockchain.info/')
   }
 
-  public async fetchBlockByHash(blockHash: string): Promise<BlockchainItemData> {
+  public async fetchBlockByHash(blockHash: string): Promise<BlockData> {
     console.debug(`[BlockchainExplorer] Fetching block: ${blockHash}`)
-    let block = await this.cacheService.get<BlockchainItemData>(blockHash)
+    let block = await this.cacheService.get<BlockData>(blockHash)
 
     if (!block) {
       console.debug(`[BlockchainExplorer] Block ${blockHash} not in cache, fetching from API`)
-      const response = await this.blockchainExplorer.get<BlockchainItemData>(
+      const response = await this.blockchainExplorer.get<BlockData>(
         `rawblock/${blockHash}?format=json`
       )
       block = response.body
 
       // We don't really need all the details in the cache, just those required for our usage
       console.debug(`[BlockchainExplorer] Storing block ${blockHash} in cache`)
-      await this.cacheService.set(blockHash, {
-        hash: block.hash,
-        size: block.size
-      })
+      await this.cacheService.set(blockHash, block)
     } else {
       console.debug(`[BlockchainExplorer] Block ${blockHash} found in cache`)
     }

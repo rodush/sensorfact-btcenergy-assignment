@@ -33,7 +33,7 @@ export function APIGatewayLambda() {
 }
 
 export const graphqlApi = /*#__PURE__*/ <TContext extends Record<string, unknown>>(
-  schema: GraphQLSchema,  
+  schema: GraphQLSchema,
   contextFactory?: () => Promise<TContext> | TContext
 ): HandlerFunction => {
   const handler = createHandler({

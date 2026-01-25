@@ -1,12 +1,11 @@
 import { SchemaComposer } from 'graphql-compose'
 import blockByHashResolver from './resolvers/block.resolver'
-import transactionByHashResolver from './resolvers/transaction.resolver'
 import consumptionPerDayResolver from './resolvers/per-day.resolver'
 
 const schemaComposer = new SchemaComposer()
 
-const BlockTypeTC = schemaComposer.createObjectTC({
-  name: 'Block',
+const TxTypeTC = schemaComposer.createObjectTC({
+  name: 'Transaction',
   fields: {
     hash: 'String!',
     size: 'Int!',
@@ -14,10 +13,11 @@ const BlockTypeTC = schemaComposer.createObjectTC({
   }
 })
 
-const TxTypeTC = schemaComposer.createObjectTC({
-  name: 'Transaction',
+const BlockTypeTC = schemaComposer.createObjectTC({
+  name: 'Block',
   fields: {
     hash: 'String!',
+    transactions: TxTypeTC.List,
     size: 'Int!',
     consumedEnergy: 'Float!'
   }
@@ -36,11 +36,6 @@ schemaComposer.Query.addFields({
     type: BlockTypeTC,
     args: { blockHash: 'String!' },
     resolve: blockByHashResolver
-  },
-  EnergyByTransaction: {
-    type: TxTypeTC,
-    args: { txHash: 'String!' },
-    resolve: transactionByHashResolver
   },
   ConsumptionPerDay: {
     type: [PerDayTypeTC],

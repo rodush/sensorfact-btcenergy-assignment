@@ -21,6 +21,7 @@ export class HttpService {
       retry: {
         limit: 3,
         statusCodes: [408, 413, 429, 500, 502, 503, 504, 521, 522, 524],
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         calculateDelay: ({ attemptCount, retryOptions, error, computedValue }: RetryObject) => {
           // Handle 429 with Retry-After header
           if (error?.response?.statusCode === 429) {

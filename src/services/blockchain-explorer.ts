@@ -1,4 +1,3 @@
-import { GraphQLError } from 'graphql'
 import { CacheService } from './cache.js'
 import { HttpService } from './http.js'
 import { isToday } from 'src/helpers.js'

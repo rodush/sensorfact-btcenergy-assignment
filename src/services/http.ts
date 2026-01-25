@@ -12,7 +12,7 @@ export class HttpService {
   private httpClient: Got
   private lastRequestTime: number = 0
   private requestQueue: Promise<void> = Promise.resolve()
-  private readonly minRequestInterval: number = 10_000 // 0.1 RPS = 1 request per 10 seconds
+  private readonly minRequestInterval: number = 1_000 // 1 RPS = 1 request per second
 
   public constructor(baseUrl: string) {
     this.httpClient = got.extend({
@@ -26,7 +26,7 @@ export class HttpService {
           if (error?.response?.statusCode === 429) {
             const retryAfter = error.response.headers['retry-after']
 
-            console.debug(
+            console.warn(
               `Received 429 Too Many Requests. Retry attempt #${attemptCount}. Retry-After: ${retryAfter}`
             )
 
@@ -60,6 +60,7 @@ export class HttpService {
     await this.waitForRateLimit()
 
     const response: Response<T> = await this.httpClient.get<T>(path)
+
     return {
       body: response.body,
       headers: response.headers,

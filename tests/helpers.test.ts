@@ -1,4 +1,4 @@
-import { getDayTimestamps, batchArray, sleep } from '../src/helpers'
+import { getDayTimestamps, batchArray, sleep, isToday } from '../src/helpers'
 
 describe('getDayTimestamps', () => {
   beforeEach(() => {
@@ -258,5 +258,86 @@ describe('sleep', () => {
     const elapsed = Date.now() - start
     expect(elapsed).toBeGreaterThanOrEqual(50)
     expect(elapsed).toBeLessThan(100) // Should run in parallel, not 150ms
+  })
+})
+
+describe('isToday', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  it('should return true for current date', () => {
+    jest.setSystemTime(new Date('2026-01-25T14:30:45.123Z'))
+    const today = new Date('2026-01-25T10:00:00.000Z')
+
+    expect(isToday(today)).toBe(true)
+  })
+
+  it('should return true for date with different time but same day', () => {
+    jest.setSystemTime(new Date('2026-01-25T08:00:00.000Z'))
+    const todayDifferentTime = new Date('2026-01-25T23:59:59.999Z')
+
+    expect(isToday(todayDifferentTime)).toBe(true)
+  })
+
+  it('should return false for yesterday', () => {
+    jest.setSystemTime(new Date('2026-01-25T12:00:00.000Z'))
+    const yesterday = new Date('2026-01-24T12:00:00.000Z')
+
+    expect(isToday(yesterday)).toBe(false)
+  })
+
+  it('should return false for tomorrow', () => {
+    jest.setSystemTime(new Date('2026-01-25T12:00:00.000Z'))
+    const tomorrow = new Date('2026-01-26T12:00:00.000Z')
+
+    expect(isToday(tomorrow)).toBe(false)
+  })
+
+  it('should return false for date in different month', () => {
+    jest.setSystemTime(new Date('2026-01-25T12:00:00.000Z'))
+    const differentMonth = new Date('2026-02-25T12:00:00.000Z')
+
+    expect(isToday(differentMonth)).toBe(false)
+  })
+
+  it('should return false for date in different year', () => {
+    jest.setSystemTime(new Date('2026-01-25T12:00:00.000Z'))
+    const differentYear = new Date('2025-01-25T12:00:00.000Z')
+
+    expect(isToday(differentYear)).toBe(false)
+  })
+
+  it('should handle midnight correctly', () => {
+    jest.setSystemTime(new Date('2026-01-25T00:00:00.000Z'))
+    const midnight = new Date('2026-01-25T00:00:00.000Z')
+
+    expect(isToday(midnight)).toBe(true)
+  })
+
+  it('should handle end of day correctly', () => {
+    jest.setSystemTime(new Date('2026-01-25T23:59:59.999Z'))
+    const endOfDay = new Date('2026-01-25T00:00:00.000Z')
+
+    expect(isToday(endOfDay)).toBe(true)
+  })
+
+  it('should handle leap year date', () => {
+    jest.setSystemTime(new Date('2024-02-29T12:00:00.000Z'))
+    const leapDay = new Date('2024-02-29T18:00:00.000Z')
+
+    expect(isToday(leapDay)).toBe(true)
+  })
+
+  it('should work with date objects created from timestamps', () => {
+    jest.setSystemTime(new Date('2026-01-25T12:00:00.000Z'))
+    const now = new Date()
+    const fromTimestamp = new Date(now.getTime())
+
+    expect(isToday(fromTimestamp)).toBe(true)
   })
 })

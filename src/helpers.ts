@@ -17,6 +17,21 @@ export function getDayTimestamps(daysBack: number): number[] {
 }
 
 /**
+ * Compares the provided date with today's date in UTC.
+ * Uses only date parts (year, month, day) for comparison.
+ * @param date
+ * @returns boolean
+ */
+export function isToday(date: Date): boolean {
+  const now = new Date()
+  return (
+    date.getUTCFullYear() === now.getUTCFullYear() &&
+    date.getUTCMonth() === now.getUTCMonth() &&
+    date.getUTCDate() === now.getUTCDate()
+  )
+}
+
+/**
  * Splits an array into batches of a specified size
  * @param items - Array of items to split into batches
  * @param batchSize - Size of each batch

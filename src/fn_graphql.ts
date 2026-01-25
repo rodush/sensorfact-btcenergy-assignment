@@ -6,16 +6,19 @@ import type { GraphQLSchema } from 'graphql'
 import { APIGatewayEvent, Context } from 'aws-lambda'
 import { BlockchainExplorerService } from './services/blockchain-explorer.js'
 import { CacheService } from './services/cache.js'
+import { HttpService } from './services/http.js'
 
 // Create cache service outside handler to persist across Lambda invocations
 // Note: In development with serverless-offline's --reloadHandler flag,
 // the module is reloaded on each request, so cache won't persist.
 // Use 'yarn start:cached' to test cache persistence locally.
-// In production Lambda, warm containers will preserve this module-level state.
+// WARNING: This is only for demonstration purposes!!!
 const cacheService = new CacheService()
 
+const httpService = new HttpService('https://blockchain.info/')
+
 const services = {
-  blockchainExplorer: new BlockchainExplorerService(cacheService)
+  blockchainExplorer: new BlockchainExplorerService(httpService, cacheService)
 }
 
 export function APIGatewayLambda() {

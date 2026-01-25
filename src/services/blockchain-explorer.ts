@@ -1,5 +1,7 @@
+import { GraphQLError } from 'graphql'
 import { CacheService } from './cache.js'
 import { HttpService } from './http.js'
+import { isToday } from 'src/helpers.js'
 
 export type BlockchainItemData = {
   // We don't need all fields, just those which we will be using for our purposes
@@ -21,48 +23,65 @@ export type BlockData = BlockchainItemData & {
 export class BlockchainExplorerService {
   private blockchainExplorer: HttpService
 
-  public constructor(private cacheService: CacheService) {
+  public constructor(
+    httpService: HttpService,
+    private cacheService: CacheService
+  ) {
     // TODO: best for DI and testing would be to pass httpService from outside
-    this.blockchainExplorer = new HttpService('https://blockchain.info/')
+    this.blockchainExplorer = httpService
   }
 
   public async fetchBlockByHash(blockHash: string): Promise<BlockData> {
-    console.debug(`[BlockchainExplorer] Fetching block: ${blockHash}`)
+    console.info(`[BlockchainExplorer] Fetching block: ${blockHash}`)
+
     let block = await this.cacheService.get<BlockData>(blockHash)
 
     if (!block) {
-      console.debug(`[BlockchainExplorer] Block ${blockHash} not in cache, fetching from API`)
       const response = await this.blockchainExplorer.get<BlockData>(
         `rawblock/${blockHash}?format=json`
       )
       block = response.body
 
-      // We don't really need all the details in the cache, just those required for our usage
-      console.debug(`[BlockchainExplorer] Storing block ${blockHash} in cache`)
-      await this.cacheService.set(blockHash, block)
-    } else {
-      console.debug(`[BlockchainExplorer] Block ${blockHash} found in cache`)
+      // skip saving today's blocks to cache as they might change
+      if (!isToday(new Date(block.time * 1000))) {
+        await this.cacheService.set(blockHash, block)
+      } else {
+        console.info(`Skipping caching today's block ${blockHash}`)
+      }
     }
 
-    return block
+    return {
+      hash: block.hash,
+      size: block.size,
+      tx: block.tx.map((tx) => ({
+        hash: tx.hash,
+        size: tx.size,
+        time: tx.time
+      }))
+    } as BlockData
   }
 
   public async fetchTransactionByHash(txHash: string): Promise<BlockchainItemData> {
+    console.info(`[BlockchainExplorer] Fetching transaction details: ${txHash}`)
+
     let tx = await this.cacheService.get<BlockchainItemData>(txHash)
 
     if (!tx) {
-      console.log(`Cache miss for transaction ${txHash}, fetching from blockchain explorer...`)
-
       const response = await this.blockchainExplorer.get<BlockchainItemData>(
         `rawtx/${txHash}?format=json`
       )
       tx = response.body
 
       // To reduce cache size we could only store necessary fields
-      await this.cacheService.set(txHash, { hash: tx.hash, size: tx.size })
+      // XXX: Transaction might be cancelled, but it still might have consumed the energy, so we cache it anyway
+      await this.cacheService.set(txHash, { hash: tx.hash, size: tx.size, time: tx.time })
     }
 
-    return tx
+    return {
+      hash: tx.hash,
+      size: tx.size,
+      time: tx.time
+    } as BlockchainItemData
   }
 
   public async fetchBlockHashesPerDay(dateTimeMs: number): Promise<string[]> {

@@ -1,20 +1,29 @@
 import { HTTP_BATCH_SIZE, MAX_DAYS_BACK, WATT_PER_BYTE } from 'src/constants'
 import { batchArray, getDayTimestamps } from '../helpers'
 import { BlockchainExplorerService, BlockchainItemData } from '../services/blockchain-explorer'
+import { GraphQLError } from 'graphql'
 
-class DateLimitError extends Error {}
+class DateLimitError extends GraphQLError {}
+
+export type DailyEnergyConsumption = {
+  timestamp: string
+  consumedEnergy: number
+}
 
 export default async function consumptionPerDayResolver(
   source: string,
   args: { numDays: number },
   context: { services: { blockchainExplorer: BlockchainExplorerService } }
-): Promise<Record<string, number>> {
-  const timestamps = getDayTimestamps(args.numDays)
+): Promise<DailyEnergyConsumption[]> {
+  if (args.numDays < 1) {
+    throw new GraphQLError('Number of days must be at least 1')
+  }
 
-  if (timestamps.length > MAX_DAYS_BACK) {
+  if (args.numDays > MAX_DAYS_BACK) {
     throw new DateLimitError(`Cannot check more than ${MAX_DAYS_BACK} days back`)
   }
 
+  const timestamps = getDayTimestamps(args.numDays)
   const batchesOfDays = batchArray(timestamps, HTTP_BATCH_SIZE)
 
   const blockHashesList: Array<Record<number, string[]>> = []
@@ -34,23 +43,23 @@ export default async function consumptionPerDayResolver(
     blockHashesList.push(...results)
   }
 
-  console.debug('Fetched block hashes for days:', blockHashesList.flat())
-
-  const finalResult: Record<string, number> = {}
+  const finalResult: DailyEnergyConsumption[] = []
 
   const totalPromises = blockHashesList.flatMap(async (entry: Record<number, string[]>) => {
-    console.log('Processing entry:', entry)
     const [dateTs, blockHashesInDay] = Object.entries(entry)[0]
 
     console.debug('Block hashes for day', dateTs, ':', blockHashesInDay.length)
 
     // const batchesOfBlocksPerDay = batchArray(blockHashesInDay, HTTP_BATCH_SIZE)
-    // XXX: Temporary limit to first 20 blocks for testing
-    const batchesOfBlocksPerDay = batchArray(blockHashesInDay.slice(0, 20), HTTP_BATCH_SIZE)
+    // XXX: Temporary limit to first 5 blocks for testing, otherwise getting 429 and blocked for 1h
+    const batchesOfBlocksPerDay = batchArray(blockHashesInDay.slice(0, 5), HTTP_BATCH_SIZE)
     let wattPerDay = 0
 
     while (batchesOfBlocksPerDay.length > 0) {
       const batch = batchesOfBlocksPerDay.shift()
+
+      console.debug('Processing block batch for day', dateTs, ':', batch)
+
       if (!batch) continue
 
       // Process each batch (fetch data for each day in the batch)
@@ -64,7 +73,7 @@ export default async function consumptionPerDayResolver(
       break // TODO: Remove this break after testing to process all batches
     }
 
-    finalResult[dateTs] = wattPerDay
+    finalResult.push({ timestamp: dateTs, consumedEnergy: wattPerDay })
   })
 
   await Promise.all(totalPromises)

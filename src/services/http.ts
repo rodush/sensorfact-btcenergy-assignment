@@ -11,10 +11,9 @@ interface HttpResponse<T> {
 
 export class HttpService {
   private httpClient: Got
-  private lastRequestTime: number = 0
-  private requestQueue: Promise<void> = Promise.resolve()
-  // XXX: Rate limiting for all API also impacts the fast requests. Come up with a smarter strategy of limiting withing the resolver.
-  private readonly minRequestInterval: number = 5_000 // 1 RPS = 1 request per second
+  private lastRequestTimePerPath: Record<string, number> = {}
+  private requestQueuePerPath: Record<string, Promise<void>> = {}
+  private readonly minRequestInterval: number = 10_000 // 10 seconds between requests per endpoint
 
   public constructor(baseUrl: string) {
     this.httpClient = got.extend({
@@ -60,7 +59,7 @@ export class HttpService {
   }
 
   public async get<T>(path: string): Promise<HttpResponse<T>> {
-    await this.waitForRateLimit()
+    await this.waitForRateLimit(path)
 
     const response: Response<T> = await this.httpClient.get<T>(path)
 
@@ -71,21 +70,47 @@ export class HttpService {
     }
   }
 
-  private async waitForRateLimit(): Promise<void> {
-    // Chain this request after the previous one
-    this.requestQueue = this.requestQueue.then(async () => {
+  private getPathSegment(path: string): string {
+    // Extract first segment of the path (before any resource identifier)
+    // Examples: "rawblock/hash" -> "rawblock", "rawtx/123" -> "rawtx"
+    // Handle full URLs by extracting path after domain
+    let cleanPath = path
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      const url = new URL(path)
+      cleanPath = url.pathname
+    }
+    
+    // Remove leading slash and get first segment
+    const firstSegment = cleanPath.replace(/^\//, '').split('/')[0]
+    return firstSegment || 'default'
+  }
+
+  private async waitForRateLimit(path: string): Promise<void> {
+    const pathSegment = this.getPathSegment(path)
+
+    // Initialize queue for this path segment if it doesn't exist
+    if (!this.requestQueuePerPath[pathSegment]) {
+      this.requestQueuePerPath[pathSegment] = Promise.resolve()
+      this.lastRequestTimePerPath[pathSegment] = 0
+    }
+
+    // Chain this request after the previous one for this path segment
+    this.requestQueuePerPath[pathSegment] = this.requestQueuePerPath[pathSegment].then(async () => {
       const now = Date.now()
-      const timeSinceLastRequest = now - this.lastRequestTime
+      const timeSinceLastRequest = now - this.lastRequestTimePerPath[pathSegment]
 
       if (timeSinceLastRequest < this.minRequestInterval) {
         const waitTime = this.minRequestInterval - timeSinceLastRequest
+        console.debug(
+          `[HttpService] Rate limiting ${pathSegment}: waiting ${waitTime}ms`
+        )
         await sleep(waitTime)
       }
 
-      this.lastRequestTime = Date.now()
+      this.lastRequestTimePerPath[pathSegment] = Date.now()
     })
 
     // Wait for this request's turn
-    await this.requestQueue
+    await this.requestQueuePerPath[pathSegment]
   }
 }

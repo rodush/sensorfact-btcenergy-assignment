@@ -79,10 +79,16 @@ describe('getDayTimestamps', () => {
     expect(result[3]).toBe(new Date('2026-01-02T00:00:00.000Z').getTime())
   })
 
-  it('should return empty array for negative days', () => {
-    const result = getDayTimestamps(-1)
+  it('should throw error for negative days', () => {
+    expect(() => getDayTimestamps(-1)).toThrow('daysBack must be a non-negative integer')
+  })
 
-    expect(result).toHaveLength(0)
+  it('should throw error for non-integer days', () => {
+    expect(() => getDayTimestamps(3.5)).toThrow('daysBack must be a non-negative integer')
+  })
+
+  it('should throw error for NaN', () => {
+    expect(() => getDayTimestamps(NaN)).toThrow('daysBack must be a non-negative integer')
   })
 
   it('should ignore current time and always use midnight', () => {
@@ -258,6 +264,18 @@ describe('sleep', () => {
     const elapsed = Date.now() - start
     expect(elapsed).toBeGreaterThanOrEqual(50)
     expect(elapsed).toBeLessThan(100) // Should run in parallel, not 150ms
+  })
+
+  it('should throw error for negative milliseconds', () => {
+    expect(() => sleep(-1)).toThrow('sleep duration must be a non-negative number')
+  })
+
+  it('should throw error for NaN', () => {
+    expect(() => sleep(NaN)).toThrow('sleep duration must be a non-negative number')
+  })
+
+  it('should throw error for Infinity', () => {
+    expect(() => sleep(Infinity)).toThrow('sleep duration must be a non-negative number')
   })
 })
 

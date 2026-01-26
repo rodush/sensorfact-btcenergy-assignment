@@ -4,6 +4,10 @@
  * @returns Array of unix timestamps in milliseconds, starting from N days ago to today
  */
 export function getDayTimestamps(daysBack: number): number[] {
+  if (!Number.isInteger(daysBack) || daysBack < 0) {
+    throw new Error('daysBack must be a non-negative integer')
+  }
+
   const timestamps: number[] = []
 
   for (let i = daysBack; i >= 0; i--) {
@@ -56,5 +60,8 @@ export function batchArray<T>(items: T[], batchSize: number): T[][] {
  * @returns Promise that resolves after the specified delay
  */
 export function sleep(ms: number): Promise<void> {
+  if (!Number.isFinite(ms) || ms < 0) {
+    throw new Error('sleep duration must be a non-negative number')
+  }
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

@@ -38,6 +38,14 @@ export class CacheService {
   }
 
   public async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
+    if (!key || typeof key !== 'string') {
+      throw new Error('Cache key must be a non-empty string')
+    }
+
+    if (ttlSeconds !== undefined && (!Number.isFinite(ttlSeconds) || ttlSeconds < 0)) {
+      throw new Error('TTL must be a non-negative number')
+    }
+
     try {
       const serialized = JSON.stringify(value)
       const options = ttlSeconds ? { ttl: ttlSeconds * 1000 } : undefined

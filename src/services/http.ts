@@ -59,14 +59,28 @@ export class HttpService {
   }
 
   public async get<T>(path: string): Promise<HttpResponse<T>> {
-    await this.waitForRateLimit(path)
+    if (!path || typeof path !== 'string' || path.trim().length === 0) {
+      throw new Error('Invalid path: path must be a non-empty string')
+    }
 
-    const response: Response<T> = await this.httpClient.get<T>(path)
+    try {
+      await this.waitForRateLimit(path)
 
-    return {
-      body: response.body,
-      headers: response.headers,
-      statusCode: response.statusCode
+      const response: Response<T> = await this.httpClient.get<T>(path)
+
+      // Validate response has required fields
+      if (!response || response.statusCode === undefined) {
+        throw new Error('Invalid response received from HTTP client')
+      }
+
+      return {
+        body: response.body,
+        headers: response.headers,
+        statusCode: response.statusCode
+      }
+    } catch (error) {
+      console.error(`[HttpService] Failed to fetch ${path}:`, error)
+      throw error
     }
   }
 
@@ -74,15 +88,23 @@ export class HttpService {
     // Extract first segment of the path (before any resource identifier)
     // Examples: "rawblock/hash" -> "rawblock", "rawtx/123" -> "rawtx"
     // Handle full URLs by extracting path after domain
-    let cleanPath = path
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      const url = new URL(path)
-      cleanPath = url.pathname
+    try {
+      let cleanPath = path
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        const url = new URL(path)
+        cleanPath = url.pathname
+      }
+
+      // Remove leading slash and get first segment
+      const firstSegment = cleanPath.replace(/^\//, '').split('/')[0]
+      return firstSegment || 'default'
+    } catch (error) {
+      console.warn(
+        `[HttpService] Failed to parse path segment from "${path}", using default`,
+        error
+      )
+      return 'default'
     }
-    
-    // Remove leading slash and get first segment
-    const firstSegment = cleanPath.replace(/^\//, '').split('/')[0]
-    return firstSegment || 'default'
   }
 
   private async waitForRateLimit(path: string): Promise<void> {
@@ -101,9 +123,7 @@ export class HttpService {
 
       if (timeSinceLastRequest < this.minRequestInterval) {
         const waitTime = this.minRequestInterval - timeSinceLastRequest
-        console.debug(
-          `[HttpService] Rate limiting ${pathSegment}: waiting ${waitTime}ms`
-        )
+        console.debug(`[HttpService] Rate limiting ${pathSegment}: waiting ${waitTime}ms`)
         await sleep(waitTime)
       }
 

@@ -1,23 +1,7 @@
+import { BlockchainItemData, BlockData, BlocksPerDayResponse } from '../types.js'
 import { CacheService } from './cache.js'
 import { HttpService } from './http.js'
-import { isToday } from 'src/helpers.js'
-
-export type BlockchainItemData = {
-  // We don't need all fields, just those which we will be using for our purposes
-  hash: string
-  size: number
-  time: number
-}
-
-export type BlocksPerDayResponse = {
-  hash: string
-  time: number
-  block_index: number
-}
-
-export type BlockData = BlockchainItemData & {
-  tx: BlockchainItemData[]
-}
+import { isToday } from '../helpers.js'
 
 export class BlockchainExplorerService {
   private blockchainExplorer: HttpService

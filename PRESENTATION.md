@@ -5,16 +5,17 @@ Holds assumptions and requirements to be refined.
 ## FR - clarification questions
 
 - How many days in the back we want to look? It's a very heavy operation, can't be realtime.
-- Are we going to support date range selection?
-- Transaction might be confirmed or cancelled, it's still correct to report energy consumption, correct?
+- Is it a must to be able to query by block hash and block idx? Caching will be trickier if allow both.\
+  Can we only allow search by block hash?
+- Are we going to support date range selection or just X days from the past?
+- Transaction might be confirmed or cancelled, we still report energy consumption, correct?
 - We could use concurrent requests with Promise.all(), but there is a risk the whole package will crash.
   We could use Promise.allSettled() and either ignore failed responses, or retry them separately.
   How tolerate are we to the data accuracy?
-- In a break down by day API will return energy consumption in *watts*
-- Does it all have to be realtime and synchronous. What about wallet transaction for a very active wallet with many transactions?
+- PRIMARY question (after exploring the API and first naïve approach / Spike):
+  Does it all have to be realtime and synchronous. What about wallet transaction for a very active wallet with many transactions?
   We don't know which wallet will be requested, so we can't pre-cache.
   Could we make this information received as a "Task", and e.g. implement WebSocket to update UI later?
-  
 
 ## NFR's
 

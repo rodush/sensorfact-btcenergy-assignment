@@ -1,8 +1,9 @@
 import type { Got, Response, RetryObject } from 'got'
 import got from 'got'
 import { sleep } from '../helpers.js'
+import { HTTP_REQUEST_TIMEOUT_MS } from '../constants.js'
 
-export interface HttpResponse<T> {
+interface HttpResponse<T> {
   body: T
   headers: Record<string, string | string[] | undefined>
   statusCode: number
@@ -12,12 +13,13 @@ export class HttpService {
   private httpClient: Got
   private lastRequestTime: number = 0
   private requestQueue: Promise<void> = Promise.resolve()
-  private readonly minRequestInterval: number = 1_000 // 1 RPS = 1 request per second
+  // XXX: Rate limiting for all API also impacts the fast requests. Come up with a smarter strategy of limiting withing the resolver.
+  private readonly minRequestInterval: number = 5_000 // 1 RPS = 1 request per second
 
   public constructor(baseUrl: string) {
     this.httpClient = got.extend({
       prefixUrl: baseUrl,
-      timeout: { request: 3_000 },
+      timeout: { request: HTTP_REQUEST_TIMEOUT_MS },
       retry: {
         limit: 3,
         statusCodes: [408, 413, 429, 500, 502, 503, 504, 521, 522, 524],

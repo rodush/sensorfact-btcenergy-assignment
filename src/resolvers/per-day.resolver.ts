@@ -1,14 +1,10 @@
 import { HTTP_BATCH_SIZE, MAX_DAYS_BACK, WATT_PER_BYTE } from 'src/constants'
 import { batchArray, getDayTimestamps } from '../helpers'
-import { BlockchainExplorerService, BlockchainItemData } from '../services/blockchain-explorer'
+import { BlockchainExplorerService } from '../services/blockchain-explorer'
 import { GraphQLError } from 'graphql'
+import { BlockchainItemData, DailyEnergyConsumption } from '../types'
 
 class DateLimitError extends GraphQLError {}
-
-export type DailyEnergyConsumption = {
-  timestamp: string
-  consumedEnergy: number
-}
 
 export default async function consumptionPerDayResolver(
   source: string,

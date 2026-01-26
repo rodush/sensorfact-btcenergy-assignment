@@ -15,7 +15,6 @@ export class BlockchainExplorerService {
     httpService: HttpService,
     private cacheService: CacheService
   ) {
-    // TODO: best for DI and testing would be to pass httpService from outside
     this.blockchainExplorer = httpService
   }
 
@@ -115,15 +114,7 @@ export class BlockchainExplorerService {
         throw new Error(`Invalid response: expected array of blocks for timestamp ${dateTimeMs}`)
       }
 
-      return response.body
-        .map((block: BlocksPerDayResponse) => {
-          if (!block || !block.hash) {
-            console.warn(`[BlockchainExplorer] Block with missing hash in day ${dateTimeMs}`)
-            return ''
-          }
-          return block.hash
-        })
-        .filter((hash) => hash.length > 0)
+      return response.body.map((block) => block.hash)
     } catch (error) {
       console.error(`[BlockchainExplorer] Failed to fetch blocks for day ${dateTimeMs}:`, error)
       throw error

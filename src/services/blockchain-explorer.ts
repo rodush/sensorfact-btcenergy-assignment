@@ -1,4 +1,9 @@
-import { BlockchainItemData, BlockData, BlocksPerDayResponse } from '../types.js'
+import {
+  BlockchainItemData,
+  BlockData,
+  BlocksPerDayResponse,
+  WalletAddressResponse
+} from '../types.js'
 import { CacheService } from './cache.js'
 import { HttpService } from './http.js'
 import { isToday } from '../helpers.js'
@@ -73,5 +78,40 @@ export class BlockchainExplorerService {
     )
 
     return response.body.map((block: BlocksPerDayResponse) => block.hash)
+  }
+
+  public async fetchWalletTransactions(
+    address: string,
+    offset: number = 0
+  ): Promise<WalletAddressResponse> {
+    console.info(
+      `[BlockchainExplorer] Fetching wallet transactions for: ${address}, offset: ${offset}`
+    )
+
+    const cacheKey = `wallet:${address}:${offset}`
+    let walletData = await this.cacheService.get<WalletAddressResponse>(cacheKey)
+
+    if (!walletData) {
+      const response = await this.blockchainExplorer.get<WalletAddressResponse>(
+        `rawaddr/${address}?offset=${offset}`
+      )
+      walletData = response.body
+
+      // Cache wallet data for a shorter period since it can change
+      // Only cache if there are transactions
+      if (walletData.txs && walletData.txs.length > 0) {
+        await this.cacheService.set(cacheKey, walletData, 1000 * 60 * 60) // 1 hour TTL
+      }
+    }
+
+    return {
+      address: walletData.address,
+      n_tx: walletData.n_tx,
+      txs: walletData.txs.map((tx) => ({
+        hash: tx.hash,
+        size: tx.size,
+        time: tx.time
+      }))
+    }
   }
 }

@@ -28,3 +28,9 @@ export type BlocksPerDayResponse = {
 export type BlockData = BlockchainItemData & {
   tx: BlockchainItemData[]
 }
+
+export type WalletAddressResponse = {
+  address: string
+  n_tx: number
+  txs: BlockchainItemData[]
+}

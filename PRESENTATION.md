@@ -12,10 +12,48 @@ Holds assumptions and requirements to be refined.
 - We could use concurrent requests with Promise.all(), but there is a risk the whole package will crash.
   We could use Promise.allSettled() and either ignore failed responses, or retry them separately.
   How tolerate are we to the data accuracy?
+- What's the expected load / usage? How many concurrent users?
 - PRIMARY question (after exploring the API and first naïve approach / Spike):
   Does it all have to be realtime and synchronous. What about wallet transaction for a very active wallet with many transactions?
   We don't know which wallet will be requested, so we can't pre-cache.
   Could we make this information received as a "Task", and e.g. implement WebSocket to update UI later?
+- Public API is very limited; we either need the token to go up to 100RPS, that will cost some money, or we need to check another data provider.
+
+### Thoughts
+
+- If we stick to bitcoin.info API, we are very constrained and architecture becomes very complex
+- Discuss the UI behavior to see how we should design the API contract; e.g. - lazy loading or load if requested.
+  E.g. user might need to press the "Load more" button in UI to load next page of transactions for the wallet, or load next day.
+- Use AI to see what other alternative options exist
+- Probe Bitquery explorer
+- Use bitquery.io GQL api (https://ide.bitquery.io), e.g. https://ide.bitquery.io:
+
+  ```graphql
+  query ($network: BitcoinNetwork!, $timeFormat: String!) {
+    bitcoin(network: $network) {
+      blocks {
+        blockHash
+        blockSize
+        timestamp(time: {since: "2026-01-28"}) {
+          time(format: $timeFormat)
+        }
+      }
+    }
+  }
+  ```
+
+  Gives us what we need, and is very flexible in terms of querying + very fast
+  Example output:
+  
+  ```json
+  {
+    "blockHash": "00000000000000000001f22723b2f03ead54d1eebe17d0f2c320d82ec852be58",
+    "blockSize": 1555512,
+    "timestamp": {
+      "time": "2026-01-28 13:38:16"
+    }
+  }
+  ```
 
 ## NFR's
 
